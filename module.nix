@@ -1,4 +1,4 @@
-{ config, lib, pkgs, quickshell, hyprland, nur, dotfiles, ... }:
+{ config, lib, pkgs, inputs, quickshell, hyprland, nur, dotfiles, ... }:
 let
   inherit (lib)
     mkEnableOption
@@ -247,6 +247,10 @@ in
       portalPackage = cfg.hyprland.xdgPortalPackage;
     };
 
+    # GeoClue for location services (required for QtPositioning)
+    services.geoclue2.enable = true;
+
+
 
     # Required fonts
     fonts.packages = with pkgs; [
@@ -264,8 +268,31 @@ in
 
     # System packages
     environment.systemPackages = [
-      # QuickShell
-      quickshell.packages.${pkgs.system}.default
+      # QuickShell with QtPositioning support
+      (pkgs.symlinkJoin {
+        name = "quickshell-with-qtpositioning";
+        paths = [ inputs.quickshell.packages.${pkgs.system}.default ];
+        buildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          wrapProgram $out/bin/quickshell \
+            --prefix QML2_IMPORT_PATH : "${lib.makeSearchPath "lib/qt-6/qml" [
+              pkgs.kdePackages.qtpositioning
+              pkgs.kdePackages.qtbase  
+              pkgs.kdePackages.qtdeclarative
+              pkgs.kdePackages.qtmultimedia
+              pkgs.kdePackages.qtsensors
+              pkgs.kdePackages.qtsvg
+              pkgs.kdePackages.qtwayland
+              pkgs.kdePackages.qt5compat
+              pkgs.kdePackages.qtimageformats
+              pkgs.kdePackages.qtquicktimeline
+              pkgs.kdePackages.qttools
+              pkgs.kdePackages.qttranslations
+              pkgs.kdePackages.qtvirtualkeyboard
+              pkgs.kdePackages.qtwebsockets
+            ]}"
+        '';
+      })
       
       # Core utilities
       pkgs.cava
@@ -332,6 +359,9 @@ in
       pythonEnv
       pkgs.python313Packages.kde-material-you-colors
       pkgs.eza
+      
+      # GeoClue for location services (QtPositioning)
+      pkgs.geoclue2
       
       # KDE/Qt packages (required for QuickShell)
       pkgs.gnome-keyring
