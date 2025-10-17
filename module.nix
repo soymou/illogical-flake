@@ -87,6 +87,8 @@ let
         builtins.fetchTree cleanSrc;
 in
 {
+  imports = [ inputs.home-manager.nixosModules.home-manager ];
+  
   options.services.illogical-impulse = {
     enable = mkEnableOption "Enable the Illogical Impulse Hyprland setup";
 
@@ -239,6 +241,11 @@ in
 
   config = mkIf cfg.enable {
     
+    # Enable home-manager
+    home-manager.useGlobalPkgs = true;
+    home-manager.useUserPackages = true;
+    home-manager.backupFileExtension = "backup";
+    
     # Hyprland configuration with portal
     programs.hyprland = mkIf cfg.hyprland.enable {
       enable = true;
@@ -268,29 +275,49 @@ in
 
     # System packages
     environment.systemPackages = [
-      # QuickShell with QtPositioning support
+      # QuickShell with QtPositioning support (wrap both qs and quickshell)
       (pkgs.symlinkJoin {
         name = "quickshell-with-qtpositioning";
         paths = [ inputs.quickshell.packages.${pkgs.system}.default ];
         buildInputs = [ pkgs.makeWrapper ];
         postBuild = ''
-          wrapProgram $out/bin/quickshell \
-            --prefix QML2_IMPORT_PATH : "${lib.makeSearchPath "lib/qt-6/qml" [
-              pkgs.kdePackages.qtpositioning
-              pkgs.kdePackages.qtbase  
-              pkgs.kdePackages.qtdeclarative
-              pkgs.kdePackages.qtmultimedia
-              pkgs.kdePackages.qtsensors
-              pkgs.kdePackages.qtsvg
-              pkgs.kdePackages.qtwayland
-              pkgs.kdePackages.qt5compat
-              pkgs.kdePackages.qtimageformats
-              pkgs.kdePackages.qtquicktimeline
-              pkgs.kdePackages.qttools
-              pkgs.kdePackages.qttranslations
-              pkgs.kdePackages.qtvirtualkeyboard
-              pkgs.kdePackages.qtwebsockets
-            ]}"
+          # Create a fake venv structure for compatibility with scripts that source activate
+          mkdir -p $out/venv/bin
+          cat > $out/venv/bin/activate <<'EOF'
+# Fake activate script for Nix Python environment
+# The Python environment is already available in PATH
+# Provide a deactivate function for compatibility
+deactivate() {
+    # In a real venv, this would restore the old PATH
+    # Since we're using Nix, there's nothing to deactivate
+    :
+}
+EOF
+
+          # Wrap both quickshell and qs commands with Qt module paths and Python
+          for binary in quickshell qs; do
+            if [ -f "$out/bin/$binary" ]; then
+              wrapProgram "$out/bin/$binary" \
+                --prefix QML2_IMPORT_PATH : "${lib.makeSearchPath "lib/qt-6/qml" [
+                  pkgs.kdePackages.qtpositioning
+                  pkgs.kdePackages.qtbase
+                  pkgs.kdePackages.qtdeclarative
+                  pkgs.kdePackages.qtmultimedia
+                  pkgs.kdePackages.qtsensors
+                  pkgs.kdePackages.qtsvg
+                  pkgs.kdePackages.qtwayland
+                  pkgs.kdePackages.qt5compat
+                  pkgs.kdePackages.qtimageformats
+                  pkgs.kdePackages.qtquicktimeline
+                  pkgs.kdePackages.qttools
+                  pkgs.kdePackages.qttranslations
+                  pkgs.kdePackages.qtvirtualkeyboard
+                  pkgs.kdePackages.qtwebsockets
+                ]}" \
+                --prefix PATH : "${pythonEnv}/bin" \
+                --set ILLOGICAL_IMPULSE_VIRTUAL_ENV "$out/venv"
+            fi
+          done
         '';
       })
       
@@ -334,6 +361,9 @@ in
       pkgs.swww
       pkgs.translate-shell
       pkgs.hyprpicker
+      pkgs.imagemagick
+      pkgs.ffmpeg
+      pkgs.gnome-settings-daemon  # Provides gsettings
       
       # Wayland/Hyprland specific
       pkgs.hyprlock
@@ -408,7 +438,8 @@ in
       QT_QPA_PLATFORMTHEME = "kde";
       QT_STYLE_OVERRIDE = "";
       ILLOGICAL_IMPULSE_DOTFILES_SOURCE = "/home/${cfg.user}/.config";
-      qsconfig = "/home/${cfg.user}/.config/quickshell/ii";
+      ILLOGICAL_IMPULSE_VIRTUAL_ENV = "${pythonEnv}";
+      qsConfig = "/home/${cfg.user}/.config/quickshell/ii";
     } // lib.optionalAttrs cfg.hyprland.ozoneWayland.enable {
       NIXOS_OZONE_WL = "1";
     };
@@ -427,6 +458,42 @@ in
     # Setup dotfiles via environment.etc symlinks for system-wide access
     environment.etc = mkIf (cfg.dotfiles.source != "local") {
       "illogical-impulse/dotfiles".source = dotfilesSource;
+    };
+
+    # Copy all dotfiles from /dots/.config to user's .config directory
+    home-manager.users.${cfg.user} = { config, ... }: {
+      home.stateVersion = "25.05";
+
+      # Disable home-manager's font management to avoid conflicts
+      fonts.fontconfig.enable = false;
+
+      # Use activation script to copy files instead of symlinking
+      home.activation.copyIllogicalImpulseConfigs = config.lib.dag.entryAfter ["writeBoundary"] ''
+        # Path to the config directory in the dotfiles source
+        configPath="${dotfilesSource}/dots/.config"
+        targetPath="$HOME/.config"
+
+        # Copy all items from dotfiles .config to user .config
+        $DRY_RUN_CMD mkdir -p "$targetPath"
+
+        for item in "$configPath"/*; do
+          itemName=$(basename "$item")
+          targetItem="$targetPath/$itemName"
+
+          # Remove existing file/directory if it exists
+          if [ -e "$targetItem" ] || [ -L "$targetItem" ]; then
+            $DRY_RUN_CMD rm -rf "$targetItem"
+          fi
+
+          # Copy the item (works for both files and directories)
+          $DRY_RUN_CMD cp -r "$item" "$targetItem"
+
+          # Make files writable
+          $DRY_RUN_CMD chmod -R u+w "$targetItem"
+        done
+
+        echo "Copied Illogical Impulse configuration files to ~/.config"
+      '';
     };
   };
 }
