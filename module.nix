@@ -8,9 +8,12 @@ let
     mkDefault;
 
   cfg = config.services.illogical-flake;
-  
+
   # External packages
   nurPkgs = inputs.nur.legacyPackages.${pkgs.system};
+
+  # Custom packages
+  customPkgs = import ./pkgs { inherit pkgs; };
   
   # Python environment for quickshell wallpaper analysis
   pythonEnv = pkgs.python3.withPackages (ps: [
@@ -382,7 +385,7 @@ EOF
       
       # Themes and icons
       pkgs.adw-gtk3
-      pkgs.illogical-impulse-oneui4-icons
+      customPkgs.illogical-impulse-oneui4-icons
       
       # Python with required packages for wallpaper analysis
       pythonEnv
