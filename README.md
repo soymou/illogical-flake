@@ -264,19 +264,6 @@ The following are automatically set:
 - **Memory**: 4GB+ RAM (8GB+ recommended)
 - **Storage**: ~3-4GB for all packages and dependencies
 
-## Keyboard Shortcuts
-
-Some useful default shortcuts:
-- `Super + Return`: Open terminal (Kitty)
-- `Super + D`: Application launcher (Fuzzel)
-- `Super + Q`: Close window
-- `Super + I`: Settings application
-- `Ctrl + Super + R`: **Restart QuickShell** (use after changing some settings)
-- `Super + L`: Lock screen
-- `Super + Shift + E`: Logout menu
-
-See the [Hyprland keybinds.conf](https://github.com/end-4/dots-hyprland/blob/main/dots/.config/hypr/hyprland/keybinds.conf) for complete list.
-
 ## Troubleshooting
 
 ### QuickShell not starting
@@ -291,8 +278,7 @@ See the [Hyprland keybinds.conf](https://github.com/end-4/dots-hyprland/blob/mai
 
 ### Settings not persisting
 - Most settings save automatically to `~/.config/illogical-impulse/config.json`
-- Some UI updates require restarting QuickShell: `Ctrl+Super+R`
-- Time format changes need QuickShell restart to take effect (upstream limitation)
+- Some UI updates may require a system rebuild to take effect
 
 ### SHA256 hash errors
 When updating dotfiles source:
@@ -307,7 +293,6 @@ All required packages are included by default. If something is missing, please o
 
 ## Known Limitations
 
-- **Time Format Changes**: Require QuickShell restart (`Ctrl+Super+R`) to take effect - this is an upstream QuickShell/QML limitation with JsonObject property bindings
 - **First Build**: Initial build downloads ~3GB of packages - subsequent builds are much faster
 - **Home Manager Required**: This flake uses home-manager for configuration management
 
