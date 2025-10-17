@@ -30,7 +30,7 @@ This flake provides a NixOS module that installs and configures end-4's beautifu
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    illogical-impulse.url = "github:yourusername/illogical-impulse-flake";
+    illogical-impulse.url = "github:soymou/illogical-flake";
   };
 
   outputs = { nixpkgs, illogical-impulse, ... }: {
