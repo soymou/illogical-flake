@@ -364,13 +364,12 @@ EOF
       pkgs.imagemagick
       pkgs.ffmpeg
       pkgs.gnome-settings-daemon  # Provides gsettings
+      pkgs.libnotify  # Provides notify-send
       
       # Wayland/Hyprland specific
       pkgs.hyprlock
       pkgs.hypridle
       pkgs.hyprsunset
-      pkgs.redshift
-      pkgs.swayidle
       pkgs.wayland-protocols
       pkgs.wl-clipboard
       
@@ -387,8 +386,7 @@ EOF
       
       # Python with required packages for wallpaper analysis
       pythonEnv
-      pkgs.python313Packages.kde-material-you-colors
-      pkgs.eza
+      pkgs.eza  # Modern ls replacement
       
       # GeoClue for location services (QtPositioning)
       pkgs.geoclue2
@@ -473,11 +471,39 @@ EOF
         configPath="${dotfilesSource}/dots/.config"
         targetPath="$HOME/.config"
 
+        # Directories to exclude from copying (QuickShell manages these dynamically)
+        excludedDirs=("illogical-impulse")
+
         # Copy all items from dotfiles .config to user .config
         $DRY_RUN_CMD mkdir -p "$targetPath"
 
+        # Create illogical-impulse directory structure if it doesn't exist
+        $DRY_RUN_CMD mkdir -p "$targetPath/illogical-impulse"
+
+        # Copy the default config.json only if it doesn't already exist
+        if [ ! -f "$targetPath/illogical-impulse/config.json" ]; then
+          if [ -f "$configPath/illogical-impulse/config.json" ]; then
+            $DRY_RUN_CMD cp "$configPath/illogical-impulse/config.json" "$targetPath/illogical-impulse/config.json"
+            $DRY_RUN_CMD chmod u+w "$targetPath/illogical-impulse/config.json"
+          fi
+        fi
+
         for item in "$configPath"/*; do
           itemName=$(basename "$item")
+
+          # Skip excluded directories
+          skip=false
+          for excluded in "''${excludedDirs[@]}"; do
+            if [ "$itemName" = "$excluded" ]; then
+              skip=true
+              break
+            fi
+          done
+
+          if [ "$skip" = true ]; then
+            continue
+          fi
+
           targetItem="$targetPath/$itemName"
 
           # Remove existing file/directory if it exists
