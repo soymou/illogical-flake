@@ -169,13 +169,7 @@ hyprland = {
 
 ## Getting SHA256 Hash
 
-To get the SHA256 hash for any repository:
-
-```bash
-nix-prefetch-url --unpack https://github.com/owner/repo/archive/main.tar.gz
-```
-
-Or use `lib.fakeSha256` initially, then replace with the correct hash from the error message.
+Use `lib.fakeSha256` initially, then rebuild to get the correct hash from the error message and replace it.
 
 ## What's Included
 
