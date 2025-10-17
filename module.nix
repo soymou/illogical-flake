@@ -7,7 +7,7 @@ let
     types
     mkDefault;
 
-  cfg = config.services.illogical-impulse;
+  cfg = config.services.illogical-flake;
   
   # External packages
   nurPkgs = inputs.nur.legacyPackages.${pkgs.system};
@@ -89,7 +89,7 @@ in
 {
   imports = [ inputs.home-manager.nixosModules.home-manager ];
   
-  options.services.illogical-impulse = {
+  options.services.illogical-flake = {
     enable = mkEnableOption "Enable the Illogical Impulse Hyprland setup";
 
     user = mkOption {

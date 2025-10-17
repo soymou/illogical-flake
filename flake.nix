@@ -38,6 +38,6 @@
       inherit config lib pkgs;
       inputs = { inherit quickshell hyprland nur home-manager dotfiles; };
     };
-    nixosModules.illogical-impulse = self.nixosModules.default;
+    nixosModules.illogical-flake = self.nixosModules.default;
   };
 }
