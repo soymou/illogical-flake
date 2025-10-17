@@ -28,7 +28,10 @@
 
   outputs = { self, nixpkgs, quickshell, hyprland, nur, dotfiles, ... }: {
     # The main NixOS module
-    nixosModules.default = import ./module.nix;
+    nixosModules.default = { config, lib, pkgs, ... }: (import ./module.nix) {
+      inherit config lib pkgs;
+      inputs = { inherit quickshell hyprland nur dotfiles; };
+    };
     nixosModules.illogical-impulse = self.nixosModules.default;
   };
 }

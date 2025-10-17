@@ -1,4 +1,4 @@
-{ config, lib, pkgs, inputs, quickshell, hyprland, nur, dotfiles, ... }:
+{ config, lib, pkgs, inputs, ... }:
 let
   inherit (lib)
     mkEnableOption
@@ -10,7 +10,7 @@ let
   cfg = config.services.illogical-impulse;
   
   # External packages
-  nurPkgs = nur.legacyPackages.${pkgs.system};
+  nurPkgs = inputs.nur.legacyPackages.${pkgs.system};
   
   # Python environment for quickshell wallpaper analysis
   pythonEnv = pkgs.python3.withPackages (ps: [
@@ -46,7 +46,7 @@ let
     in
     if isEmpty then
       # Use default dotfiles from flake input
-      dotfiles
+      inputs.dotfiles
     else
       let
         # Remove null values and flake=false from the attribute set
@@ -222,13 +222,13 @@ in
 
       package = mkOption {
         type = types.package;
-        default = hyprland.packages.${pkgs.system}.hyprland;
+        default = inputs.hyprland.packages.${pkgs.system}.hyprland;
         description = "Hyprland package to use.";
       };
 
       xdgPortalPackage = mkOption {
         type = types.package;
-        default = hyprland.packages.${pkgs.system}.xdg-desktop-portal-hyprland;
+        default = inputs.hyprland.packages.${pkgs.system}.xdg-desktop-portal-hyprland;
         description = "xdg-desktop-portal implementation for Hyprland.";
       };
 
@@ -407,15 +407,14 @@ in
     environment.sessionVariables = {
       QT_QPA_PLATFORMTHEME = "kde";
       QT_STYLE_OVERRIDE = "";
-      ILLOGICAL_IMPULSE_DOTFILES_SOURCE = toString dotfilesSource;
+      ILLOGICAL_IMPULSE_DOTFILES_SOURCE = "/home/${cfg.user}/.config";
+      qsconfig = "/home/${cfg.user}/.config/quickshell/ii";
     } // lib.optionalAttrs cfg.hyprland.ozoneWayland.enable {
       NIXOS_OZONE_WL = "1";
     };
 
     # User configuration
     users.users.${cfg.user} = {
-      isNormalUser = true;
-      extraGroups = [ "wheel" "networkmanager" "audio" "video" ];
       shell = if cfg.dotfiles.fish.enable then pkgs.fish else pkgs.bash;
     };
 
