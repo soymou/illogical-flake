@@ -390,6 +390,13 @@ EOF
             fi
           done
 
+          # Move illogical-impulse icon to the correct hicolor theme directory if it exists
+          if [ -f "$targetLocalShare/icons/illogical-impulse.svg" ]; then
+            $DRY_RUN_CMD mkdir -p "$targetLocalShare/icons/hicolor/scalable/apps"
+            $DRY_RUN_CMD mv "$targetLocalShare/icons/illogical-impulse.svg" "$targetLocalShare/icons/hicolor/scalable/apps/"
+            echo "Moved illogical-impulse icon to hicolor theme directory"
+          fi
+
           echo "Copied Illogical Impulse .local/share files to ~/.local/share"
         fi
       '';
