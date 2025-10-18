@@ -19,7 +19,31 @@ This flake provides a comprehensive NixOS module that installs end-4's stunning 
 
 ## Quick Start
 
-### 1. Add the flake to your inputs
+### Option A: Minimal Setup (Recommended)
+
+The flake provides its own nixpkgs and home-manager, so you can get started with just one input:
+
+```nix
+{
+  inputs = {
+    illogical-flake.url = "github:soymou/illogical-flake";
+  };
+
+  outputs = { self, illogical-flake, ... }: {
+    nixosConfigurations.yourhostname = illogical-flake.inputs.nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./configuration.nix
+        illogical-flake.nixosModules.default
+      ];
+    };
+  };
+}
+```
+
+### Option B: Full Control
+
+If you need specific versions of nixpkgs or home-manager, override the inputs:
 
 ```nix
 {
@@ -50,7 +74,7 @@ This flake provides a comprehensive NixOS module that installs end-4's stunning 
 }
 ```
 
-### 2. Enable in your configuration.nix
+### Enable in your configuration.nix
 
 ```nix
 services.illogical-flake = {
@@ -59,7 +83,7 @@ services.illogical-flake = {
 };
 ```
 
-### 3. Rebuild and enjoy!
+### Rebuild and enjoy!
 
 ```bash
 sudo nixos-rebuild switch --flake .#yourhostname
