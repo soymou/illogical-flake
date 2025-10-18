@@ -13,7 +13,7 @@ This flake provides a comprehensive NixOS module that installs end-4's stunning 
 - ✅ **Complete QuickShell Integration**: All Qt/QML modules including QtPositioning properly configured
 - ✅ **Working Wallpaper Analysis**: Python environment with all required packages for dynamic color generation
 - ✅ **Automatic Configuration Copying**: Dotfiles copied to writable locations for proper config management
-- ✅ **Flexible Dotfiles Sourcing**: Use end-4's original dotfiles or your own fork from any Git source
+- ✅ **Flexible Dotfiles Sourcing**: Use end-4's original dotfiles or your own fork via flake inputs
 - ✅ **Zero Manual Configuration**: All dependencies, fonts, and utilities included
 - ✅ **Production Ready**: Tested and working with all major features functional
 
@@ -26,27 +26,21 @@ This flake provides a comprehensive NixOS module that installs end-4's stunning 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     illogical-flake = {
       url = "github:soymou/illogical-flake";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
-    };
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
 
   outputs = { self, nixpkgs, home-manager, illogical-flake, ... }: {
     nixosConfigurations.yourhostname = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
-      specialArgs = {
-        inherit inputs;
-        outputs = self.outputs;
-        # These are automatically inherited from illogical-flake:
-        inherit (illogical-flake.inputs) quickshell hyprland nur dotfiles;
-      };
       modules = [
         ./configuration.nix
         illogical-flake.nixosModules.default
@@ -97,48 +91,44 @@ services.illogical-flake = {
 
 ### Using Your Own Dotfiles Fork
 
-The flake supports multiple methods for sourcing dotfiles:
+To use your own fork or custom version of the dotfiles, add a dotfiles input to your flake and override illogical-flake's dotfiles input:
 
-#### GitHub (Short URL format)
 ```nix
-dotfiles.source = {
-  url = "github:yourusername/dots-hyprland";
-  sha256 = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-};
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Your custom dotfiles
+    dotfiles = {
+      url = "github:yourusername/dots-hyprland";
+      flake = false;
+    };
+
+    illogical-flake = {
+      url = "github:soymou/illogical-flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
+      inputs.dotfiles.follows = "dotfiles";  # Use your dotfiles
+    };
+  };
+}
 ```
 
-#### GitHub (Explicit format)
-```nix
-dotfiles.source = {
-  type = "github";
-  owner = "yourusername";
-  repo = "dots-hyprland";
-  rev = "main";  # branch, tag, or commit
-  sha256 = "sha256-...";
-};
-```
+You can use any source supported by Nix flakes:
+- **GitHub**: `url = "github:owner/repo";` or `url = "github:owner/repo/branch";`
+- **Git**: `url = "git+https://example.com/repo.git";`
+- **Local path**: `url = "path:/home/user/dotfiles";` (useful for development)
 
-#### Any Git Repository
-```nix
-dotfiles.source = {
-  type = "git";
-  url = "https://git.sr.ht/~user/dotfiles";
-  rev = "main";
-  sha256 = "sha256-...";
-};
+When you update your dotfiles repository, just run:
+```bash
+nix flake update dotfiles
+sudo nixos-rebuild switch --flake .#yourhostname
 ```
-
-#### GitLab
-```nix
-dotfiles.source = {
-  type = "gitlab";
-  owner = "username";
-  repo = "dots-hyprland";
-  sha256 = "sha256-...";
-};
-```
-
-**Getting the SHA256**: Use a fake hash initially, rebuild, and copy the correct hash from the error message.
 
 ### Advanced Configuration
 
@@ -159,8 +149,8 @@ services.illogical-flake = {
     ];
 
     # Use specific Hyprland version (optional)
-    package = inputs.hyprland.packages.${pkgs.system}.hyprland;
-    xdgPortalPackage = inputs.hyprland.packages.${pkgs.system}.xdg-desktop-portal-hyprland;
+    package = inputs.illogical-flake.inputs.hyprland.packages.${pkgs.system}.hyprland;
+    xdgPortalPackage = inputs.illogical-flake.inputs.hyprland.packages.${pkgs.system}.xdg-desktop-portal-hyprland;
 
     # Chromium/Electron Wayland support
     ozoneWayland.enable = true;
@@ -168,10 +158,6 @@ services.illogical-flake = {
 
   # Customize which shell tools to use
   dotfiles = {
-    source = {
-      url = "github:end-4/dots-hyprland";
-      sha256 = "sha256-...";
-    };
     fish.enable = true;      # Use Fish shell
     kitty.enable = true;     # Install Kitty terminal
     starship.enable = true;  # Use Starship prompt
@@ -243,7 +229,7 @@ All required command-line tools are included:
    - QuickShell can modify its configuration without conflicts
 
 3. **Automatic Updates**:
-   - Change your dotfiles source URL and rebuild to update
+   - Update your dotfiles input and rebuild to update
    - Settings changes in QuickShell persist across updates
    - User customizations are preserved
 
@@ -280,14 +266,6 @@ The following are automatically set:
 - Most settings save automatically to `~/.config/illogical-impulse/config.json`
 - Some UI updates may require a system rebuild to take effect
 
-### SHA256 hash errors
-When updating dotfiles source:
-1. Change the URL/rev in your configuration
-2. Set `sha256 = "";` (empty string) or use `lib.fakeSha256`
-3. Run rebuild - it will fail with the correct hash
-4. Copy the correct hash from the error message
-5. Update your configuration and rebuild again
-
 ### Missing packages
 All required packages are included by default. If something is missing, please open an issue.
 
@@ -304,8 +282,11 @@ nix flake update illogical-flake
 sudo nixos-rebuild switch --flake .#yourhostname
 ```
 
-### Update your dotfiles source
-Change the `rev` or `sha256` in your configuration and rebuild.
+### Update your dotfiles
+```bash
+nix flake update dotfiles
+sudo nixos-rebuild switch --flake .#yourhostname
+```
 
 ### Update all inputs
 ```bash

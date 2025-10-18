@@ -40,54 +40,8 @@ let
     ps.opencv4
   ]);
 
-  # Determine dotfiles source
-  dotfilesSource = 
-    let
-      src = cfg.dotfiles.source;
-      # Check if source is empty (default state)
-      isEmpty = src == {} || (src.url or null) == null && (src.type or null) == null;
-    in
-    if isEmpty then
-      # Use default dotfiles from flake input
-      inputs.dotfiles
-    else
-      let
-        # Remove null values and flake=false from the attribute set
-        cleanSrc = lib.filterAttrs (name: value: 
-          value != null && !(name == "flake" && value == false)
-        ) src;
-        
-        # Handle different source formats
-        hasUrl = cleanSrc.url or null != null;
-        hasType = cleanSrc.type or null != null;
-      in
-      if hasUrl && lib.hasPrefix "github:" cleanSrc.url then
-        # Handle github: URLs specially
-        let
-          urlParts = lib.splitString "/" (lib.removePrefix "github:" cleanSrc.url);
-          owner = builtins.elemAt urlParts 0;
-          repo = builtins.elemAt urlParts 1;
-        in
-        pkgs.fetchFromGitHub {
-          inherit owner repo;
-          rev = cleanSrc.rev or cleanSrc.ref or "main";
-          sha256 = cleanSrc.sha256 or cleanSrc.hash;
-        }
-      else if hasType && cleanSrc.type == "github" then
-        pkgs.fetchFromGitHub {
-          owner = cleanSrc.owner;
-          repo = cleanSrc.repo;
-          rev = cleanSrc.rev or cleanSrc.ref or "main";
-          sha256 = cleanSrc.sha256 or cleanSrc.hash;
-        }
-      else if hasType && cleanSrc.type == "git" then
-        pkgs.fetchgit {
-          url = cleanSrc.url;
-          rev = cleanSrc.rev;
-          sha256 = cleanSrc.sha256 or cleanSrc.hash;
-        }
-      else
-        builtins.fetchTree cleanSrc;
+  # Use dotfiles from flake input
+  dotfilesSource = inputs.dotfiles;
 in
 {
   imports = [ inputs.home-manager.nixosModules.home-manager ];
@@ -101,116 +55,6 @@ in
     };
 
     dotfiles = {
-      source = mkOption {
-        type = types.submodule {
-          options = {
-            # URL-based sources
-            url = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "URL of the repository (github:owner/repo, git+https://..., etc.)";
-            };
-            
-            # GitHub-specific options
-            type = mkOption {
-              type = types.nullOr (types.enum [ "github" "gitlab" "sourcehut" "git" "mercurial" "tarball" ]);
-              default = null;
-              description = "Type of source";
-            };
-            owner = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Repository owner (for GitHub/GitLab/SourceHut)";
-            };
-            repo = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Repository name (for GitHub/GitLab/SourceHut)";
-            };
-            
-            # Git options
-            rev = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Git revision/commit hash";
-            };
-            ref = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Git reference (branch/tag name)";
-            };
-            
-            # Hash options
-            sha256 = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "SHA256 hash of the fetched content";
-            };
-            hash = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "SRI hash of the fetched content (newer format)";
-            };
-            
-            # Additional options
-            flake = mkOption {
-              type = types.bool;
-              default = false;
-              description = "Whether this is a flake";
-            };
-            dir = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Subdirectory within the source";
-            };
-            submodules = mkOption {
-              type = types.nullOr types.bool;
-              default = null;
-              description = "Whether to fetch git submodules";
-            };
-            fetchSubmodules = mkOption {
-              type = types.nullOr types.bool;
-              default = null;
-              description = "Whether to fetch git submodules (alias for submodules)";
-            };
-            allRefs = mkOption {
-              type = types.nullOr types.bool;
-              default = null;
-              description = "Whether to fetch all refs";
-            };
-            
-            # Tarball/file options
-            name = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Name for the derivation";
-            };
-            
-            # Mercurial options
-            branch = mkOption {
-              type = types.nullOr types.str;
-              default = null;
-              description = "Mercurial branch";
-            };
-          };
-        };
-        default = {};
-        description = ''
-          Source of dotfiles as an attribute set like flake inputs with all standard Nix fetcher options.
-          
-          Examples:
-          # GitHub
-          { type = "github"; owner = "end-4"; repo = "dots-hyprland"; sha256 = "..."; }
-          { url = "github:end-4/dots-hyprland"; sha256 = "..."; }
-          
-          # Git
-          { type = "git"; url = "https://git.sr.ht/~user/dotfiles"; ref = "main"; sha256 = "..."; }
-          
-          # GitLab
-          { type = "gitlab"; owner = "user"; repo = "dotfiles"; sha256 = "..."; }
-        '';
-      };
-
       fish.enable = mkEnableOption "Use the Illogical Impulse fish config" // { default = true; };
       kitty.enable = mkEnableOption "Install kitty and use the Illogical Impulse kitty config" // { default = true; };
       starship.enable = mkEnableOption "Install starship and use the Illogical Impulse prompt" // { default = true; };
@@ -457,9 +301,7 @@ EOF
     programs.starship.enable = cfg.dotfiles.starship.enable;
 
     # Setup dotfiles via environment.etc symlinks for system-wide access
-    environment.etc = mkIf (cfg.dotfiles.source != "local") {
-      "illogical-impulse/dotfiles".source = dotfilesSource;
-    };
+    environment.etc."illogical-impulse/dotfiles".source = dotfilesSource;
 
     # Copy all dotfiles from /dots/.config to user's .config directory
     home-manager.users.${cfg.user} = { config, ... }: {
