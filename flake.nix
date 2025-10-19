@@ -6,12 +6,12 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     
     quickshell = {
-      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell";
+      url = "git+https://git.outfoxxed.me/outfoxxed/quickshell?rev=00858812f25b748d08b075a0d284093685fa3ffd";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     hyprland = {
-      url = "github:hyprwm/Hyprland";
+      url = "github:hyprwm/Hyprland/";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
