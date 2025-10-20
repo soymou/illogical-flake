@@ -212,7 +212,8 @@ EOF
       pkgs.ffmpeg
       pkgs.gnome-settings-daemon  # Provides gsettings
       pkgs.libnotify  # Provides notify-send
-      
+      pkgs.easyeffects
+
       # Wayland/Hyprland specific
       pkgs.hyprlock
       pkgs.hypridle
