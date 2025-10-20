@@ -212,7 +212,7 @@ EOF
       pkgs.ffmpeg
       pkgs.gnome-settings-daemon  # Provides gsettings
       pkgs.libnotify  # Provides notify-send
-      pkgs.easyeffects 
+      pkgs.easyeffects
 
       # Wayland/Hyprland specific
       pkgs.hyprlock
@@ -365,6 +365,41 @@ EOF
         done
 
         echo "Copied Illogical Impulse configuration files to ~/.config"
+
+        # Copy .local/share contents (icons, etc.)
+        localSharePath="${dotfilesSource}/dots/.local/share"
+        targetLocalShare="$HOME/.local/share"
+
+        if [ -d "$localSharePath" ]; then
+          $DRY_RUN_CMD mkdir -p "$targetLocalShare"
+
+          for item in "$localSharePath"/*; do
+            if [ -e "$item" ]; then
+              itemName=$(basename "$item")
+              targetItem="$targetLocalShare/$itemName"
+
+              # Remove existing file/directory if it exists
+              if [ -e "$targetItem" ] || [ -L "$targetItem" ]; then
+                $DRY_RUN_CMD rm -rf "$targetItem"
+              fi
+
+              # Copy the item
+              $DRY_RUN_CMD cp -r "$item" "$targetItem"
+
+              # Make files writable
+              $DRY_RUN_CMD chmod -R u+w "$targetItem"
+            fi
+          done
+
+          # Move illogical-impulse icon to the correct hicolor theme directory if it exists
+          if [ -f "$targetLocalShare/icons/illogical-impulse.svg" ]; then
+            $DRY_RUN_CMD mkdir -p "$targetLocalShare/icons/hicolor/scalable/apps"
+            $DRY_RUN_CMD mv "$targetLocalShare/icons/illogical-impulse.svg" "$targetLocalShare/icons/hicolor/scalable/apps/"
+            echo "Moved illogical-impulse icon to hicolor theme directory"
+          fi
+
+          echo "Copied Illogical Impulse .local/share files to ~/.local/share"
+        fi
       '';
     };
   };
