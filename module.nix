@@ -213,6 +213,7 @@ EOF
       pkgs.gnome-settings-daemon  # Provides gsettings
       pkgs.libnotify  # Provides notify-send
       pkgs.easyeffects
+      pkgs.swappy
 
       # Wayland/Hyprland specific
       pkgs.hyprlock
