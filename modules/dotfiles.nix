@@ -8,6 +8,9 @@ let
   dotfilesSource = inputs.dotfiles;
 in
 {
+  # Import home-manager at the top level
+  imports = [ inputs.home-manager.nixosModules.home-manager ];
+
   options.services.illogical-flake.dotfiles = {
     fish.enable = mkEnableOption "Use the Illogical Impulse fish config" // { default = true; };
     kitty.enable = mkEnableOption "Install kitty and use the Illogical Impulse kitty config" // { default = true; };
@@ -15,8 +18,6 @@ in
   };
 
   config = mkIf cfg.enable {
-    # Import home-manager
-    imports = [ inputs.home-manager.nixosModules.home-manager ];
 
     # Setup home-manager
     home-manager.useGlobalPkgs = true;
