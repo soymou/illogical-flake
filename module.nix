@@ -5,8 +5,11 @@ let
   cfg = config.services.illogical-flake;
 in
 {
-  # Import all sub-modules
-  imports = [
+  # Import all sub-modules with inputs passed explicitly
+  imports = map (module: { ... }: {
+    imports = [ module ];
+    _module.args = { inherit inputs; };
+  }) [
     ./modules/fonts.nix
     ./modules/packages.nix
     ./modules/qt.nix
@@ -14,9 +17,6 @@ in
     ./modules/environment.nix
     ./modules/dotfiles.nix
   ];
-
-  # Make inputs available to all sub-modules (must be at top level, not in config)
-  _module.args.inputs = inputs;
 
   # Main options for Illogical Impulse
   options.services.illogical-flake = {
