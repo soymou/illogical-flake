@@ -37,12 +37,15 @@
     };
   };
 
-  outputs = { self, nixpkgs, quickshell, hyprland, nur, home-manager, dotfiles, ... }: {
-    # The main NixOS module
-    nixosModules.default = { config, lib, pkgs, ... }: (import ./module.nix) {
-      inherit config lib pkgs;
-      inputs = { inherit quickshell hyprland nur home-manager dotfiles; };
+  outputs = inputs@{ self, nixpkgs, quickshell, hyprland, hyprland-plugins, nur, home-manager, dotfiles, ... }:
+    let
+      flakeInputs = { inherit quickshell hyprland hyprland-plugins nur home-manager dotfiles; };
+    in {
+      # The main NixOS module
+      nixosModules.default = { config, lib, pkgs, ... }: (import ./module.nix) {
+        inherit config lib pkgs;
+        inputs = flakeInputs;
+      };
+      nixosModules.illogical-flake = self.nixosModules.default;
     };
-    nixosModules.illogical-flake = self.nixosModules.default;
-  };
 }
