@@ -15,8 +15,8 @@ in
     ./modules/dotfiles.nix
   ];
 
-  # Make inputs available to all sub-modules
-  config._module.args.inputs = inputs;
+  # Make inputs available to all sub-modules (must be at top level, not in config)
+  _module.args.inputs = inputs;
 
   # Main options for Illogical Impulse
   options.services.illogical-flake = {
