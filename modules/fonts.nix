@@ -1,4 +1,6 @@
-{ config, lib, pkgs, inputs, ... }:
+inputs:
+
+{ config, lib, pkgs, ... }:
 
 let
   cfg = config.services.illogical-flake;

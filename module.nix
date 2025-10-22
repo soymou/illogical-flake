@@ -5,17 +5,14 @@ let
   cfg = config.services.illogical-flake;
 in
 {
-  # Import all sub-modules with inputs passed explicitly
-  imports = map (module: { ... }: {
-    imports = [ module ];
-    _module.args = { inherit inputs; };
-  }) [
-    ./modules/fonts.nix
-    ./modules/packages.nix
-    ./modules/qt.nix
-    ./modules/hyprland.nix
-    ./modules/environment.nix
-    ./modules/dotfiles.nix
+  # Import all sub-modules
+  imports = [
+    (import ./modules/fonts.nix inputs)
+    (import ./modules/packages.nix inputs)
+    (import ./modules/qt.nix inputs)
+    (import ./modules/hyprland.nix inputs)
+    (import ./modules/environment.nix inputs)
+    (import ./modules/dotfiles.nix inputs)
   ];
 
   # Main options for Illogical Impulse
