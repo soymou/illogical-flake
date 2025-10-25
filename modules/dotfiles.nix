@@ -39,11 +39,33 @@ in
     environment.etc."illogical-impulse/dotfiles".source = dotfilesSource;
 
     # Copy all dotfiles from /dots/.config to user's .config directory
-    home-manager.users.${cfg.user} = { config, ... }: {
+    home-manager.users.${cfg.user} = { config, pkgs, ... }:
+    let
+      customPkgs = import ../pkgs { inherit pkgs; };
+    in {
       home.stateVersion = "25.05";
 
       # Disable home-manager's font management to avoid conflicts
       fonts.fontconfig.enable = false;
+
+      # Symlink OneUI icon themes for illogical-impulse
+      home.file.".local/share/icons/OneUI-dark".source = "${customPkgs.illogical-impulse-oneui4-icons}/share/icons/OneUI-dark";
+      home.file.".local/share/icons/OneUI-light".source = "${customPkgs.illogical-impulse-oneui4-icons}/share/icons/OneUI-light";
+
+      # Configure icon theme for GTK and Qt applications (Papirus for non-KDE setup)
+      gtk = {
+        iconTheme = {
+          name = "Papirus-Dark";
+          package = pkgs.papirus-icon-theme;
+        };
+      };
+
+      # Set icon theme via dconf for GNOME/GTK apps
+      dconf.settings = {
+        "org/gnome/desktop/interface" = {
+          icon-theme = "Papirus-Dark";
+        };
+      };
 
       # Use activation script to copy files instead of symlinking
       home.activation.copyIllogicalImpulseConfigs = config.lib.dag.entryAfter ["writeBoundary"] ''
