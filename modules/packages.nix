@@ -108,6 +108,9 @@ in
       # Themes and icons
       adw-gtk3
       customPkgs.illogical-impulse-oneui4-icons
+      adwaita-icon-theme  # Standard GNOME icons
+      kdePackages.breeze-icons  # KDE Breeze icons
+      papirus-icon-theme  # Papirus icons (fallback for many apps)
 
       # Python with required packages for wallpaper analysis
       pythonEnv
@@ -116,17 +119,13 @@ in
       # GeoClue for location services (QtPositioning)
       geoclue2
 
-      # KDE/Qt packages (required for QuickShell)
-      gnome-keyring
-      kdePackages.bluedevil
-      kdePackages.bluez-qt
-      kdePackages.plasma-nm
-      kdePackages.polkit-kde-agent-1
-      networkmanager
-      kdePackages.kcmutils
-      kdePackages.plasma-workspace
-      kdePackages.systemsettings
-      kdePackages.kdialog
+      # Minimal Qt/KDE packages (only what's needed for functionality)
+      gnome-keyring  # Keyring support
+      kdePackages.bluedevil  # Bluetooth management (for kcm_bluetooth)
+      kdePackages.plasma-nm  # Network management (for kcm_networkmanagement)
+      kdePackages.polkit-kde-agent-1  # Polkit authentication agent
+      networkmanager  # Network management backend
+      kdePackages.kdialog  # Dialog prompts
 
       # Additional Qt support
       libsForQt5.qtgraphicaleffects
