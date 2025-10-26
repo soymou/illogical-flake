@@ -18,7 +18,6 @@ services.networkmanager.enable = true;  # For network management
 
 # System fonts (optional but recommended)
 fonts.packages = with pkgs; [
-  material-symbols
   rubik
   nerd-fonts.ubuntu
   nerd-fonts.jetbrains-mono
