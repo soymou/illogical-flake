@@ -3,13 +3,13 @@ inputs:
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.services.illogical-flake;
+  cfg = config.programs.illogical-impulse;
   pythonEnv = cfg.internal.pythonEnv;
 in
 {
   config = lib.mkIf cfg.enable {
     # Qt/KDE packages required for QuickShell functionality
-    environment.systemPackages = with pkgs; [
+    home.packages = with pkgs; [
       # QuickShell with QtPositioning support (wrap both qs and quickshell)
       (pkgs.symlinkJoin {
         name = "quickshell-with-qtpositioning";

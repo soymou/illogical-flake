@@ -2,27 +2,21 @@
 
 let
   inherit (lib) mkEnableOption mkOption types;
-  cfg = config.services.illogical-flake;
+  cfg = config.programs.illogical-impulse;
 in
 {
   # Import all sub-modules
   imports = [
-    (import ./modules/fonts.nix inputs)
-    (import ./modules/packages.nix inputs)
-    (import ./modules/qt.nix inputs)
-    (import ./modules/hyprland.nix inputs)
-    (import ./modules/environment.nix inputs)
-    (import ./modules/dotfiles.nix inputs)
+    (import ./home-modules/fonts.nix inputs)
+    (import ./home-modules/packages.nix inputs)
+    (import ./home-modules/qt.nix inputs)
+    (import ./home-modules/environment.nix inputs)
+    (import ./home-modules/dotfiles.nix inputs)
   ];
 
   # Main options for Illogical Impulse
-  options.services.illogical-flake = {
-    enable = mkEnableOption "Enable the Illogical Impulse Hyprland setup";
-
-    user = mkOption {
-      type = types.str;
-      description = "User to configure for Illogical Impulse";
-    };
+  options.programs.illogical-impulse = {
+    enable = mkEnableOption "Enable the Illogical Impulse Hyprland configuration";
 
     # Internal options (not meant to be set by users)
     internal = {

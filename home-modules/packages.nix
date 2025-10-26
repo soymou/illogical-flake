@@ -3,7 +3,7 @@ inputs:
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.services.illogical-flake;
+  cfg = config.programs.illogical-impulse;
 
   # Custom packages
   customPkgs = import ../pkgs { inherit pkgs; };
@@ -35,15 +35,15 @@ let
 in
 {
   # Export pythonEnv for use in other modules
-  options.services.illogical-flake.internal.pythonEnv = lib.mkOption {
+  options.programs.illogical-impulse.internal.pythonEnv = lib.mkOption {
     type = lib.types.package;
     internal = true;
     default = pythonEnv;
   };
 
   config = lib.mkIf cfg.enable {
-    # System packages for Illogical Impulse
-    environment.systemPackages = with pkgs; [
+    # User packages for Illogical Impulse
+    home.packages = with pkgs; [
       # Core utilities
       cava
       lxqt.pavucontrol-qt
@@ -103,28 +103,25 @@ in
       libportal-gtk4
       gobject-introspection
       sassc
-      opencv
+      # opencv is included in pythonEnv, no need to include it separately
 
       # Themes and icons
       adw-gtk3
       customPkgs.illogical-impulse-oneui4-icons
-      adwaita-icon-theme  # Standard GNOME icons
-      kdePackages.breeze-icons  # KDE Breeze icons
-      papirus-icon-theme  # Papirus icons (fallback for many apps)
+      papirus-icon-theme  # Primary icon theme
+      adwaita-icon-theme  # GNOME fallback icons
+      hicolor-icon-theme  # Base icon theme (required by most themes)
+      # Note: breeze-icons not included to avoid Qt5/Qt6 conflicts with system config
 
       # Python with required packages for wallpaper analysis
       pythonEnv
       eza  # Modern ls replacement
-
-      # GeoClue for location services (QtPositioning)
-      geoclue2
 
       # Minimal Qt/KDE packages (only what's needed for functionality)
       gnome-keyring  # Keyring support
       kdePackages.bluedevil  # Bluetooth management (for kcm_bluetooth)
       kdePackages.plasma-nm  # Network management (for kcm_networkmanagement)
       kdePackages.polkit-kde-agent-1  # Polkit authentication agent
-      networkmanager  # Network management backend
       kdePackages.kdialog  # Dialog prompts
 
       # Additional Qt support
@@ -137,8 +134,5 @@ in
     ] ++ lib.optionals cfg.dotfiles.starship.enable [
       starship
     ];
-
-    # GeoClue for location services (required for QtPositioning)
-    services.geoclue2.enable = true;
   };
 }

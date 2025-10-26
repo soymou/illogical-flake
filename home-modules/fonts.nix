@@ -3,13 +3,13 @@ inputs:
 { config, lib, pkgs, ... }:
 
 let
-  cfg = config.services.illogical-flake;
+  cfg = config.programs.illogical-impulse;
   nurPkgs = inputs.nur.legacyPackages.${pkgs.system};
 in
 {
   config = lib.mkIf cfg.enable {
-    # Required fonts for the Illogical Impulse setup
-    fonts.packages = with pkgs; [
+    # Install fonts as home packages
+    home.packages = with pkgs; [
       material-symbols
       rubik
       nurPkgs.repos.skiletro.gabarito
