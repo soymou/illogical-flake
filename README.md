@@ -91,7 +91,7 @@ Override the `dotfiles` input to use your own fork:
 
     # Your custom dotfiles
     dotfiles = {
-      url = "github:yourusername/dots-hyprland";
+      url = "git+https://github.com/yourusername/dots-hyprland?submodules=1";
       flake = false;
     };
 
@@ -116,10 +116,13 @@ Override the `dotfiles` input to use your own fork:
 }
 ```
 
+**Important**: The dotfiles repository uses git submodules for some components (like Material shapes). You **must** include `?submodules=1` in the URL to fetch them properly.
+
 You can use any source supported by Nix flakes:
-- **GitHub**: `url = "github:owner/repo";` or `url = "github:owner/repo/branch";`
-- **Git**: `url = "git+https://example.com/repo.git";`
+- **GitHub with submodules**: `url = "git+https://github.com/owner/repo?submodules=1";`
+- **Git**: `url = "git+https://example.com/repo.git?submodules=1";`
 - **Local path**: `url = "path:/home/user/dotfiles";` (useful for development)
+  - For local paths, ensure submodules are initialized: `git submodule update --init --recursive`
 
 ## What's Included
 
