@@ -111,7 +111,8 @@ in
       papirus-icon-theme  # Primary icon theme
       adwaita-icon-theme  # GNOME fallback icons
       hicolor-icon-theme  # Base icon theme (required by most themes)
-      # Note: breeze-icons not included to avoid Qt5/Qt6 conflicts with system config
+      gnome-icon-theme  # Additional GNOME icon coverage
+      kdePackages.breeze-icons  # KDE Breeze icons (required by Papirus inheritance)
 
       # Python with required packages for wallpaper analysis
       pythonEnv

@@ -18,6 +18,6 @@ in
     };
 
     # Install qt6ct for Qt theming
-    home.packages = [ pkgs.qt6ct ];
+    home.packages = [ pkgs.qt6Packages.qt6ct ];
   };
 }

@@ -29,11 +29,9 @@ in
     # (cannot use home.file symlinks because we need to modify index.theme)
 
     # Symlink standard icon themes
-    home.file.".local/share/icons/Papirus-Dark".source = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Dark";
-    home.file.".local/share/icons/Papirus".source = "${pkgs.papirus-icon-theme}/share/icons/Papirus";
-    home.file.".local/share/icons/Papirus-Light".source = "${pkgs.papirus-icon-theme}/share/icons/Papirus-Light";
+    # Note: Papirus themes are handled by activation script (to add inode-directory symlinks)
     home.file.".local/share/icons/Adwaita".source = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
-    # hicolor is managed by the activation script below, not as a symlink
+    # hicolor and Papirus are managed by the activation script below, not as symlinks
 
     # Configure icon theme for GTK and Qt applications
     # Use OneUI-dark which will fall back to Papirus-Dark via inheritance
@@ -161,12 +159,14 @@ in
         echo "Copied Illogical Impulse .local/share files to ~/.local/share"
       fi
 
-      # Copy OneUI icon themes and modify index.theme to inherit from Papirus
+      # Copy OneUI icon themes and modify index.theme to inherit from Papirus and Adwaita
       for theme in OneUI-dark OneUI-light; do
-        fallback_theme="Papirus-Dark"
+        # Use Papirus for primary fallback (has inode-directory), then Adwaita, then hicolor
+        papirus_theme="Papirus-Dark"
         if [ "$theme" = "OneUI-light" ]; then
-          fallback_theme="Papirus-Light"
+          papirus_theme="Papirus-Light"
         fi
+        fallback_theme="$papirus_theme,Adwaita"
 
         # Remove existing OneUI theme directory
         if [ -e "$targetLocalShare/icons/$theme" ] || [ -L "$targetLocalShare/icons/$theme" ]; then
@@ -179,11 +179,48 @@ in
           $DRY_RUN_CMD cp -r "$oneui_source" "$targetLocalShare/icons/$theme"
           $DRY_RUN_CMD chmod -R u+w "$targetLocalShare/icons/$theme"
 
-          # Update the Inherits line to include Papirus
+          # Update the Inherits line to include Papirus and Adwaita fallbacks
           if [ -f "$targetLocalShare/icons/$theme/index.theme" ]; then
             $DRY_RUN_CMD sed -i "s/^Inherits=.*/Inherits=$fallback_theme,hicolor/" "$targetLocalShare/icons/$theme/index.theme"
             echo "Copied and updated $theme to inherit from $fallback_theme"
           fi
+        fi
+      done
+
+      # Fix Papirus themes to replace breeze inheritance with Adwaita
+      # Since breeze doesn't have inode-directory icons, we bypass it entirely
+      echo "Fixing Papirus icon inheritance..."
+      for papirus_theme in Papirus-Dark Papirus-Light Papirus; do
+        papirus_local="$targetLocalShare/icons/$papirus_theme"
+        papirus_source="${pkgs.papirus-icon-theme}/share/icons/$papirus_theme"
+
+        # Always copy from source (removing symlink or directory if exists)
+        if [ -e "$papirus_local" ] || [ -L "$papirus_local" ]; then
+          $DRY_RUN_CMD rm -rf "$papirus_local"
+        fi
+
+        if [ -d "$papirus_source" ]; then
+          $DRY_RUN_CMD cp -r "$papirus_source" "$papirus_local"
+          $DRY_RUN_CMD chmod -R u+w "$papirus_local"
+
+          # Replace breeze inheritance with Adwaita
+          if [ -f "$papirus_local/index.theme" ]; then
+            $DRY_RUN_CMD sed -i 's/Inherits=breeze-dark,/Inherits=Adwaita,/g' "$papirus_local/index.theme"
+            $DRY_RUN_CMD sed -i 's/Inherits=breeze-light,/Inherits=Adwaita,/g' "$papirus_local/index.theme"
+            $DRY_RUN_CMD sed -i 's/Inherits=breeze,/Inherits=Adwaita,/g' "$papirus_local/index.theme"
+            echo "Updated $papirus_theme to inherit from Adwaita"
+          fi
+
+          # Papirus already has inode-directory as symlinks, but let's ensure they exist
+          for size_dir in "$papirus_local"/*/places; do
+            if [ -d "$size_dir" ] && [ -f "$size_dir/folder.svg" ]; then
+              if [ ! -e "$size_dir/inode-directory.svg" ]; then
+                $DRY_RUN_CMD ln -sf folder.svg "$size_dir/inode-directory.svg"
+                echo "Created inode-directory symlink in $(dirname "$size_dir")/places"
+              fi
+            fi
+          done
+          echo "Processed $papirus_theme successfully"
         fi
       done
 
