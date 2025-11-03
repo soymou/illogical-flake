@@ -128,6 +128,8 @@ in
       # Additional Qt support
       libsForQt5.qtgraphicaleffects
       libsForQt5.qtsvg
+      # for quickshell key store
+      libsecret
     ] ++ lib.optionals cfg.dotfiles.fish.enable [
       fish
     ] ++ lib.optionals cfg.dotfiles.kitty.enable [
