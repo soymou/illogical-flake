@@ -124,6 +124,7 @@ in
       kdePackages.plasma-nm  # Network management (for kcm_networkmanagement)
       kdePackages.polkit-kde-agent-1  # Polkit authentication agent
       kdePackages.kdialog  # Dialog prompts
+      kdePackages.kirigami
 
       # Additional Qt support
       libsForQt5.qtgraphicaleffects

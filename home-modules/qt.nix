@@ -49,6 +49,7 @@ EOF
                   pkgs.kdePackages.qtvirtualkeyboard
                   pkgs.kdePackages.qtwebsockets
                   pkgs.kdePackages.syntax-highlighting
+                  pkgs.kdePackages.kirigami.unwrapped
                 ]}" \
                 --prefix PATH : "${pythonEnv}/bin" \
                 --set ILLOGICAL_IMPULSE_VIRTUAL_ENV "$out/venv"
@@ -73,6 +74,7 @@ EOF
       kdePackages.qtwayland
       kdePackages.qtwebsockets
       kdePackages.syntax-highlighting
+      kdePackages.kirigami
     ];
   };
 }
