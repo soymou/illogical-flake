@@ -5,6 +5,24 @@ inputs:
 let
   cfg = config.programs.illogical-impulse;
   pythonEnv = cfg.internal.pythonEnv;
+
+  # Override quickshell to enable Polkit
+  # We must target the unwrapped package to ensure cmakeFlags take effect during build
+  baseQuickshell = inputs.quickshell.packages.${pkgs.system}.default;
+  unwrappedQuickshell = if (builtins.hasAttr "unwrapped" baseQuickshell) then baseQuickshell.unwrapped else baseQuickshell;
+
+  quickshellPackage = unwrappedQuickshell.overrideAttrs (old: {
+    cmakeFlags = (old.cmakeFlags or []) ++ [ "-DSERVICE_POLKIT=ON" ];
+    nativeBuildInputs = (old.nativeBuildInputs or []) ++ [
+      pkgs.pkg-config
+      pkgs.kdePackages.extra-cmake-modules
+    ];
+    buildInputs = (old.buildInputs or []) ++ [ 
+      pkgs.polkit 
+      pkgs.kdePackages.polkit-qt-1
+      pkgs.glib
+    ];
+  });
 in
 {
   config = lib.mkIf cfg.enable {
@@ -13,7 +31,7 @@ in
       # QuickShell with QtPositioning support (wrap both qs and quickshell)
       (pkgs.symlinkJoin {
         name = "quickshell-with-qtpositioning";
-        paths = [ inputs.quickshell.packages.${pkgs.system}.default ];
+        paths = [ quickshellPackage ];
         buildInputs = [ pkgs.makeWrapper ];
         postBuild = ''
           # Create a fake venv structure for compatibility with scripts that source activate
@@ -33,7 +51,7 @@ EOF
           for binary in quickshell qs; do
             if [ -f "$out/bin/$binary" ]; then
               wrapProgram "$out/bin/$binary" \
-                --prefix QML2_IMPORT_PATH : "${lib.makeSearchPath "lib/qt-6/qml" [
+                --prefix QML2_IMPORT_PATH : "${quickshellPackage}/lib/qt-6/qml:$out/lib/qt-6/qml:${lib.makeSearchPath "lib/qt-6/qml" [
                   pkgs.kdePackages.qtpositioning
                   pkgs.kdePackages.qtbase
                   pkgs.kdePackages.qtdeclarative
@@ -51,6 +69,14 @@ EOF
                   pkgs.kdePackages.syntax-highlighting
                   pkgs.kdePackages.kirigami.unwrapped
                 ]}" \
+                --prefix QT_PLUGIN_PATH : "${lib.makeSearchPath "lib/qt-6/plugins" [
+                  pkgs.kdePackages.qtbase
+                  pkgs.kdePackages.qtsvg
+                  pkgs.kdePackages.qtwayland
+                  pkgs.kdePackages.qtimageformats
+                  pkgs.qt6Packages.qt6ct
+                ]}" \
+                --set QT_QPA_PLATFORMTHEME "qt6ct" \
                 --prefix PATH : "${pythonEnv}/bin" \
                 --set ILLOGICAL_IMPULSE_VIRTUAL_ENV "$out/venv" \
                 --prefix XDG_DATA_DIRS : "\$HOME/.local/share:\$HOME/.nix-profile/share:/etc/profiles/per-user/$USER/share:/nix/var/nix/profiles/default/share:/run/current-system/sw/share"
