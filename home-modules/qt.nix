@@ -8,7 +8,7 @@ let
 
   # Override quickshell to enable Polkit
   # We must target the unwrapped package to ensure cmakeFlags take effect during build
-  baseQuickshell = inputs.quickshell.packages.${pkgs.system}.default;
+  baseQuickshell = inputs.quickshell.packages.${pkgs.stdenv.hostPlatform.system}.default;
   unwrappedQuickshell = if (builtins.hasAttr "unwrapped" baseQuickshell) then baseQuickshell.unwrapped else baseQuickshell;
 
   quickshellPackage = unwrappedQuickshell.overrideAttrs (old: {

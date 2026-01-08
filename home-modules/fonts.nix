@@ -4,7 +4,7 @@ inputs:
 
 let
   cfg      = config.programs.illogical-impulse;
-  nurPkgs  = inputs.nur.legacyPackages.${pkgs.system};
+  nurPkgs  = inputs.nur.legacyPackages.${pkgs.stdenv.hostPlatform.system};
   customPkgs = import ../pkgs { inherit pkgs; };
 in
 {
