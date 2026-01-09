@@ -79,7 +79,7 @@ EOF
                 --set QT_QPA_PLATFORMTHEME "qt6ct" \
                 --prefix PATH : "${pythonEnv}/bin" \
                 --set ILLOGICAL_IMPULSE_VIRTUAL_ENV "$out/venv" \
-                --prefix XDG_DATA_DIRS : "\$HOME/.local/share:\$HOME/.nix-profile/share:/etc/profiles/per-user/$USER/share:/nix/var/nix/profiles/default/share:/run/current-system/sw/share"
+                --run 'export XDG_DATA_DIRS=$HOME/.nix-profile/share:$HOME/.local/state/nix/profiles/home-manager/home-path/share:/etc/profiles/per-user/$USER/share:/run/current-system/sw/share:${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:$XDG_DATA_DIRS'
             fi
           done
         '';
