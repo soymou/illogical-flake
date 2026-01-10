@@ -71,6 +71,13 @@ fonts.packages = with pkgs; [
       kitty.enable = true;    # Kitty terminal emulator
       starship.enable = true; # Starship prompt
     };
+    
+    # Hyprland Plugins (Declarative installation & loading)
+    hyprland.plugins = [
+      pkgs.hyprlandPlugins.hyprbars
+      pkgs.hyprlandPlugins.hyprexpo
+      # Add any other plugins available in nixpkgs
+    ];
   };
 }
 ```
