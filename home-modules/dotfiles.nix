@@ -22,26 +22,25 @@ in
 
   config = mkIf cfg.enable {
     # Shell programs
-    programs.fish.enable = cfg.dotfiles.fish.enable;
+    programs.fish = {
+      enable = cfg.dotfiles.fish.enable;
+      interactiveShellInit = ''
+        if test -f ${config.xdg.configHome}/fish/config-custom.fish
+          source ${config.xdg.configHome}/fish/config-custom.fish
+        end
+      '';
+    };
     programs.starship.enable = cfg.dotfiles.starship.enable;
 
-    # OneUI icons are copied and modified by the activation script below
-    # (cannot use home.file symlinks because we need to modify index.theme)
-
-    # Symlink standard icon themes
-    # Note: Papirus themes are handled by activation script (to add inode-directory symlinks)
+    # Symlink standard icon themes (Adwaita)
     home.file.".local/share/icons/Adwaita".source = "${pkgs.adwaita-icon-theme}/share/icons/Adwaita";
-    # hicolor and Papirus are managed by the activation script below, not as symlinks
 
     # Configure icon theme for GTK and Qt applications
-    # Use OneUI-dark which will fall back to Papirus-Dark via inheritance
     gtk = {
       enable = mkDefault true;
       iconTheme = {
         name = mkDefault "OneUI-dark";
-        package = mkDefault (let
-          customPkgs = import ../pkgs { inherit pkgs; };
-        in customPkgs.illogical-impulse-oneui4-icons);
+        package = mkDefault customPkgs.illogical-impulse-oneui4-icons;
       };
     };
 
@@ -52,19 +51,118 @@ in
       };
     };
 
-    # Use activation script to copy files instead of symlinking
+    # Dotfiles management via Home Manager (XDG Config)
+    xdg.configFile = {
+      "chrome-flags.conf".source = "${dotfilesSource}/dots/.config/chrome-flags.conf";
+      "code-flags.conf".source = "${dotfilesSource}/dots/.config/code-flags.conf";
+      "darklyrc".source = "${dotfilesSource}/dots/.config/darklyrc";
+      "dolphinrc".source = "${dotfilesSource}/dots/.config/dolphinrc";
+      "foot".source = "${dotfilesSource}/dots/.config/foot";
+      "fuzzel".source = "${dotfilesSource}/dots/.config/fuzzel";
+      
+      # Hyprland Config
+      # Use text/readFile to put the file in the HM generation directory
+      # This ensures relative sources (like hyprland/env.conf) resolve to OUR patched files
+      "hypr/hyprland.conf".text = builtins.readFile "${dotfilesSource}/dots/.config/hypr/hyprland.conf";
+      
+      # Hyprland Environment - Patched to fix XDG_DATA_DIRS and define qsConfig EARLY
+      "hypr/hyprland/env.conf".text = ''
+        # --- Injected Environment by Illogical Impulse Flake ---
+        env = PATH,${config.home.homeDirectory}/.nix-profile/bin:/etc/profiles/per-user/${config.home.username}/bin:$PATH
+        env = XDG_DATA_DIRS,${config.home.homeDirectory}/.nix-profile/share:${config.home.homeDirectory}/.local/share:/etc/profiles/per-user/${config.home.username}/share:/run/current-system/sw/share:${config.home.homeDirectory}/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share:/usr/share:$XDG_DATA_DIRS
+        env = QT_PLUGIN_PATH,${config.home.homeDirectory}/.nix-profile/lib/qt-6/plugins:${config.home.homeDirectory}/.nix-profile/lib/plugins
+        env = QML2_IMPORT_PATH,${config.home.homeDirectory}/.nix-profile/lib/qt-6/qml
+        env = QT_WAYLAND_DISABLE_WINDOWDECORATION,1
+        env = QT_QPA_PLATFORMTHEME,gtk3
+        
+        # Define qsConfig for exec-once commands
+        $qsConfig = ${config.home.homeDirectory}/.config/quickshell/ii
+        env = qsConfig,${config.home.homeDirectory}/.config/quickshell/ii
+
+        # --- Original Environment Content ---
+        env = ELECTRON_OZONE_PLATFORM_HINT,auto
+        env = QT_QPA_PLATFORM, wayland
+        env = XDG_MENU_PREFIX, plasma-
+        env = ILLOGICAL_IMPULSE_VIRTUAL_ENV, ~/.local/state/quickshell/.venv
+        env = TERMINAL,kitty -1
+      '';
+
+      # Symlink other hyprland files individually
+      "hypr/hyprland/colors.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/colors.conf";
+      "hypr/hyprland/execs.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/execs.conf";
+      "hypr/hyprland/general.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/general.conf";
+      "hypr/hyprland/keybinds.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/keybinds.conf";
+      "hypr/hyprland/rules.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprland/rules.conf";
+      "hypr/hyprland/scripts".source = "${dotfilesSource}/dots/.config/hypr/hyprland/scripts";
+
+      # Hyprland Custom Env - Reverted to direct source
+      "hypr/custom/env.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/env.conf";
+
+      # Symlink custom siblings
+      "hypr/custom/execs.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/execs.conf";
+      "hypr/custom/general.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/general.conf";
+      "hypr/custom/keybinds.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/keybinds.conf";
+      "hypr/custom/rules.conf".source = "${dotfilesSource}/dots/.config/hypr/custom/rules.conf";
+      "hypr/custom/scripts".source = "${dotfilesSource}/dots/.config/hypr/custom/scripts";
+      "hypr/hyprlock".source = "${dotfilesSource}/dots/.config/hypr/hyprlock";
+      "hypr/hypridle.conf".source = "${dotfilesSource}/dots/.config/hypr/hypridle.conf";
+      "hypr/hyprlock.conf".source = "${dotfilesSource}/dots/.config/hypr/hyprlock.conf";
+      "hypr/monitors.conf".source = "${dotfilesSource}/dots/.config/hypr/monitors.conf";
+      "hypr/workspaces.conf".source = "${dotfilesSource}/dots/.config/hypr/workspaces.conf";
+
+      "kdeglobals".source = "${dotfilesSource}/dots/.config/kdeglobals";
+      "kde-material-you-colors".source = "${dotfilesSource}/dots/.config/kde-material-you-colors";
+      "kitty".source = "${dotfilesSource}/dots/.config/kitty";
+      "konsolerc".source = "${dotfilesSource}/dots/.config/konsolerc";
+      "Kvantum".source = "${dotfilesSource}/dots/.config/Kvantum";
+      "matugen".source = "${dotfilesSource}/dots/.config/matugen";
+      "mpv".source = "${dotfilesSource}/dots/.config/mpv";
+      "quickshell".source = "${dotfilesSource}/dots/.config/quickshell";
+      "starship.toml".source = "${dotfilesSource}/dots/.config/starship.toml";
+      "thorium-flags.conf".source = "${dotfilesSource}/dots/.config/thorium-flags.conf";
+      "wlogout".source = "${dotfilesSource}/dots/.config/wlogout";
+      "xdg-desktop-portal".source = "${dotfilesSource}/dots/.config/xdg-desktop-portal";
+      "zshrc.d".source = "${dotfilesSource}/dots/.config/zshrc.d";
+
+      # Fontconfig wrapper to ensure system fonts are loaded
+      "fontconfig/fonts.conf".text = ''
+        <?xml version="1.0"?>
+        <!DOCTYPE fontconfig SYSTEM "urn:fontconfig:fonts.dtd">
+        <fontconfig>
+            <include ignore_missing="yes">/etc/fonts/fonts.conf</include>
+            <match target="font">
+                <edit name="rgba" mode="assign">
+                <const>none</const>
+            </edit>
+          </match>
+        </fontconfig>
+      '';
+      
+      # Fish config (custom integration)
+      "fish/config-custom.fish" = mkIf cfg.dotfiles.fish.enable {
+        source = "${dotfilesSource}/dots/.config/fish/config.fish";
+      };
+      "fish/auto-Hypr.fish" = mkIf cfg.dotfiles.fish.enable {
+        source = "${dotfilesSource}/dots/.config/fish/auto-Hypr.fish";
+      };
+    };
+
+    # Dotfiles management via Home Manager (XDG Data)
+    xdg.dataFile = {
+      "konsole".source = "${dotfilesSource}/dots/.local/share/konsole";
+      # Note: Icons are installed via packages (illogical-impulse-oneui4-icons) 
+      # and the custom icon is handled here if needed, but it's usually in the package too?
+      # Re-adding the single SVG manually just in case
+      "icons/hicolor/scalable/apps/illogical-impulse.svg".source = "${dotfilesSource}/dots/.local/share/icons/illogical-impulse.svg";
+    };
+
+    # Use activation script ONLY for stateful integration
     home.activation.copyIllogicalImpulseConfigs = config.lib.dag.entryAfter ["writeBoundary"] ''
       # Path to the config directory in the dotfiles source
       configPath="${dotfilesSource}/dots/.config"
       targetPath="$HOME/.config"
 
-      # Directories to exclude from copying (QuickShell manages these dynamically)
-      excludedDirs=("illogical-impulse")
-
-      # Copy all items from dotfiles .config to user .config
-      $DRY_RUN_CMD mkdir -p "$targetPath"
-
-      # Create illogical-impulse directory structure if it doesn't exist
+      # Create illogical-impulse directory structure if it doesn't exist (Stateful config)
       $DRY_RUN_CMD mkdir -p "$targetPath/illogical-impulse"
 
       # Copy the default config.json only if it doesn't already exist
@@ -74,165 +172,14 @@ in
           $DRY_RUN_CMD chmod u+w "$targetPath/illogical-impulse/config.json"
         fi
       fi
-
-      for item in "$configPath"/*; do
-        itemName=$(basename "$item")
-
-        # Skip excluded directories
-        skip=false
-        for excluded in "''${excludedDirs[@]}"; do
-          if [ "$itemName" = "$excluded" ]; then
-            skip=true
-            break
-          fi
-        done
-
-        if [ "$skip" = true ]; then
-          continue
-        fi
-
-        targetItem="$targetPath/$itemName"
-
-        # Remove existing file/directory if it exists
-        if [ -e "$targetItem" ] || [ -L "$targetItem" ]; then
-          $DRY_RUN_CMD rm -rf "$targetItem"
-        fi
-
-        # Copy the item (works for both files and directories)
-        $DRY_RUN_CMD cp -r "$item" "$targetItem"
-
-        # Make files writable
-        $DRY_RUN_CMD chmod -R u+w "$targetItem"
-      done
-
-      echo "Copied Illogical Impulse configuration files to ~/.config"
-
+      
       # Fix Qt icon theme configuration to use OneUI-dark/OneUI-light with Papirus fallback
+      # This is still needed because qt6ct might be generating its config
       for qt_conf in "$targetPath/qt5ct/qt5ct.conf" "$targetPath/qt6ct/qt6ct.conf"; do
         if [ -f "$qt_conf" ]; then
           # Replace OneUI with OneUI-dark, OneUI-light stays as-is
           $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI$/icon_theme=OneUI-dark/' "$qt_conf"
           $DRY_RUN_CMD sed -i 's/^icon_theme=OneUI-light$/icon_theme=OneUI-light/' "$qt_conf"
-          echo "Updated Qt icon theme in $(basename $(dirname $qt_conf))"
-        fi
-      done
-
-      # Fix fontconfig conf.d if it's a file instead of directory
-      if [ -f "$targetPath/fontconfig/conf.d" ]; then
-        $DRY_RUN_CMD rm "$targetPath/fontconfig/conf.d"
-        $DRY_RUN_CMD mkdir -p "$targetPath/fontconfig/conf.d"
-        echo "Fixed fontconfig/conf.d to be a directory"
-      fi
-
-      # Copy .local/share contents (icons, etc.)
-      localSharePath="${dotfilesSource}/dots/.local/share"
-      targetLocalShare="$HOME/.local/share"
-
-      if [ -d "$localSharePath" ]; then
-        $DRY_RUN_CMD mkdir -p "$targetLocalShare"
-
-        for item in "$localSharePath"/*; do
-          if [ -e "$item" ]; then
-            itemName=$(basename "$item")
-            targetItem="$targetLocalShare/$itemName"
-
-            # Remove existing file/directory if it exists
-            if [ -e "$targetItem" ] || [ -L "$targetItem" ]; then
-              $DRY_RUN_CMD rm -rf "$targetItem"
-            fi
-
-            # Copy the item
-            $DRY_RUN_CMD cp -r "$item" "$targetItem"
-
-            # Make files writable
-            $DRY_RUN_CMD chmod -R u+w "$targetItem"
-          fi
-        done
-
-        # Move illogical-impulse icon to the correct hicolor theme directory if it exists
-        if [ -f "$targetLocalShare/icons/illogical-impulse.svg" ]; then
-          $DRY_RUN_CMD mkdir -p "$targetLocalShare/icons/hicolor/scalable/apps"
-          $DRY_RUN_CMD mv "$targetLocalShare/icons/illogical-impulse.svg" "$targetLocalShare/icons/hicolor/scalable/apps/"
-          echo "Moved illogical-impulse icon to hicolor theme directory"
-        fi
-
-        echo "Copied Illogical Impulse .local/share files to ~/.local/share"
-      fi
-
-      # Copy OneUI icon themes and modify index.theme to inherit from Papirus and Adwaita
-      for theme in OneUI-dark OneUI-light; do
-        # Use Papirus for primary fallback (has inode-directory), then Adwaita, then hicolor
-        papirus_theme="Papirus-Dark"
-        if [ "$theme" = "OneUI-light" ]; then
-          papirus_theme="Papirus-Light"
-        fi
-        fallback_theme="$papirus_theme,Adwaita"
-
-        # Remove existing OneUI theme directory
-        if [ -e "$targetLocalShare/icons/$theme" ] || [ -L "$targetLocalShare/icons/$theme" ]; then
-          $DRY_RUN_CMD rm -rf "$targetLocalShare/icons/$theme"
-        fi
-
-        # Copy OneUI theme from nix store
-        oneui_source="${oneUIIconsPath}/$theme"
-        if [ -d "$oneui_source" ]; then
-          $DRY_RUN_CMD cp -r "$oneui_source" "$targetLocalShare/icons/$theme"
-          $DRY_RUN_CMD chmod -R u+w "$targetLocalShare/icons/$theme"
-
-          # Update the Inherits line to include Papirus and Adwaita fallbacks
-          if [ -f "$targetLocalShare/icons/$theme/index.theme" ]; then
-            $DRY_RUN_CMD sed -i "s/^Inherits=.*/Inherits=$fallback_theme,hicolor/" "$targetLocalShare/icons/$theme/index.theme"
-            echo "Copied and updated $theme to inherit from $fallback_theme"
-          fi
-        fi
-      done
-
-      # Fix Papirus themes to replace breeze inheritance with Adwaita
-      # Since breeze doesn't have inode-directory icons, we bypass it entirely
-      echo "Fixing Papirus icon inheritance..."
-      for papirus_theme in Papirus-Dark Papirus-Light Papirus; do
-        papirus_local="$targetLocalShare/icons/$papirus_theme"
-        papirus_source="${pkgs.papirus-icon-theme}/share/icons/$papirus_theme"
-
-        # Always copy from source (removing symlink or directory if exists)
-        if [ -e "$papirus_local" ] || [ -L "$papirus_local" ]; then
-          $DRY_RUN_CMD rm -rf "$papirus_local"
-        fi
-
-        if [ -d "$papirus_source" ]; then
-          $DRY_RUN_CMD cp -r "$papirus_source" "$papirus_local"
-          $DRY_RUN_CMD chmod -R u+w "$papirus_local"
-
-          # Replace breeze inheritance with Adwaita
-          if [ -f "$papirus_local/index.theme" ]; then
-            $DRY_RUN_CMD sed -i 's/Inherits=breeze-dark,/Inherits=Adwaita,/g' "$papirus_local/index.theme"
-            $DRY_RUN_CMD sed -i 's/Inherits=breeze-light,/Inherits=Adwaita,/g' "$papirus_local/index.theme"
-            $DRY_RUN_CMD sed -i 's/Inherits=breeze,/Inherits=Adwaita,/g' "$papirus_local/index.theme"
-            echo "Updated $papirus_theme to inherit from Adwaita"
-          fi
-
-          # Papirus already has inode-directory as symlinks, but let's ensure they exist
-          for size_dir in "$papirus_local"/*/places; do
-            if [ -d "$size_dir" ] && [ -f "$size_dir/folder.svg" ]; then
-              if [ ! -e "$size_dir/inode-directory.svg" ]; then
-                $DRY_RUN_CMD ln -sf folder.svg "$size_dir/inode-directory.svg"
-                echo "Created inode-directory symlink in $(dirname "$size_dir")/places"
-              fi
-            fi
-          done
-          echo "Processed $papirus_theme successfully"
-        fi
-      done
-
-      # Update icon cache for all installed icon themes
-      echo "Updating icon cache..."
-      for theme_dir in "$targetLocalShare/icons"/*; do
-        if [ -d "$theme_dir" ]; then
-          theme_name=$(basename "$theme_dir")
-          if [ -f "$theme_dir/index.theme" ] || [ -f "$theme_dir/icon-theme.cache" ]; then
-            $DRY_RUN_CMD ${pkgs.gtk3}/bin/gtk-update-icon-cache -f -t "$theme_dir" 2>/dev/null || true
-            echo "Updated icon cache for $theme_name"
-          fi
         fi
       done
     '';

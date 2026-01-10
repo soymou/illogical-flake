@@ -15,11 +15,17 @@ stdenv.mkDerivation {
     # Remove broken symlinks
     find . -xtype l -delete
 
-    # Fix index.theme files to add missing directory sections
+    # Fix index.theme files to add missing directory sections and set inheritance
     for theme_dir in OneUI OneUI-dark OneUI-light; do
       if [ -f "$theme_dir/index.theme" ]; then
-        # Change inheritance from hicolor to Adwaita for better icon coverage
-        sed -i 's/Inherits=hicolor/Inherits=Adwaita,hicolor/' "$theme_dir/index.theme"
+        # Set robust inheritance
+        if [[ "$theme_dir" == *"dark"* ]]; then
+             sed -i 's/^Inherits=.*/Inherits=Papirus-Dark,Adwaita,hicolor/' "$theme_dir/index.theme"
+        elif [[ "$theme_dir" == *"light"* ]]; then
+             sed -i 's/^Inherits=.*/Inherits=Papirus-Light,Adwaita,hicolor/' "$theme_dir/index.theme"
+        else
+             sed -i 's/^Inherits=.*/Inherits=Papirus,Adwaita,hicolor/' "$theme_dir/index.theme"
+        fi
 
         # Fix duplicate [16@2x/devices] that should be [22@2x/devices]
         sed -i '285,289s/\[16@2x\/devices\]/[22@2x\/devices]/' "$theme_dir/index.theme"
