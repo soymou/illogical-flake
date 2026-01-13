@@ -127,6 +127,7 @@ in
       gnome-keyring  # Keyring support
       kdePackages.bluedevil  # Bluetooth management (for kcm_bluetooth)
       kdePackages.plasma-nm  # Network management (for kcm_networkmanagement)
+      kdePackages.plasma-workspace # Provides plasma-apply-colorscheme
       kdePackages.polkit-kde-agent-1  # Polkit authentication agent
       kdePackages.kdialog  # Dialog prompts
       kdePackages.kirigami
