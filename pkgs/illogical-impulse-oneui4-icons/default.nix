@@ -15,6 +15,9 @@ stdenv.mkDerivation {
     # Remove broken symlinks
     find . -xtype l -delete
 
+    # Remove stale icon caches to force re-scan and respect new inheritance
+    rm -f */icon-theme.cache
+
     # Fix index.theme files to add missing directory sections and set inheritance
     for theme_dir in OneUI OneUI-dark OneUI-light; do
       if [ -f "$theme_dir/index.theme" ]; then
