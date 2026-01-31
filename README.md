@@ -15,6 +15,7 @@ programs.hyprland.enable = true;
 # Required services
 services.geoclue2.enable = true;  # For QtPositioning
 services.networkmanager.enable = true;  # For network management
+services.upower.enable = true: # For battery status
 
 # System fonts (optional but recommended)
 fonts.packages = with pkgs; [
