@@ -32,7 +32,7 @@ in
       (pkgs.symlinkJoin {
         name = "quickshell-with-qtpositioning";
         paths = [ quickshellPackage ];
-        buildInputs = [ pkgs.makeWrapper ];
+        nativeBuildInputs = [ pkgs.makeWrapper ];
         postBuild = ''
           # Create a fake venv structure for compatibility with scripts that source activate
           mkdir -p $out/venv/bin
